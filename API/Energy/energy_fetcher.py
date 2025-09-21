@@ -2,6 +2,7 @@
 import os 
 import requests, json, time, csv
 from pathlib import Path
+import pandas as pd
 
 #Set 'True' for debug info
 INFO_MODE = False
@@ -13,7 +14,7 @@ BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 FREQUENCY = "hourly"
 REGION = "FPL"
 START = "2019-01-01T00"
-END = "2019-01-03T00"
+END = "2025-09-20T00"
 
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
@@ -145,8 +146,8 @@ if INFO_MODE:
     print(data.columns)
 
 #Load data into raw folder
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 print(BASE_DIR)
 
-output_path = os.path.join(f"{BASE_DIR}","data", "raw", "EIA", "{REGION}_DEMAND_{START}_{END}.csv")
+output_path = os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv")
 data.to_csv(output_path, index = False)
