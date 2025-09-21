@@ -1,9 +1,7 @@
 #Core imports
-import os, requests, json, time, csv
-import pandas as pd
-import numpy as np
-from datetime import datetime
-import matplotlib.pyplot as plt
+import os 
+import requests, json, time, csv
+from pathlib import Path
 
 #Set 'True' for debug info
 INFO_MODE = False
@@ -101,7 +99,7 @@ def discover_available(frequency, start, end, length = 1000, session = None):
         "sort[0][column]": "period",
         "sort[0][direction]": "asc",
     }
-    
+
     prepared = requests.Request("GET", BASE_URL, params=params).prepare()
     print("Discover URL:", prepared.url)
     r = s.get(BASE_URL, params=params, timeout=60)
@@ -133,10 +131,22 @@ def discover_available(frequency, start, end, length = 1000, session = None):
 if INFO_MODE:
     disc = discover_available(FREQUENCY, REGION, START, END)
     disc.groupby(["respondent","type"]).size().sort_values(ascending=False).head(20)
-    disc_CAISO_D = disc[(disc["respondent"] == "CISO") & (disc["type"] == "D")]
-    print(len(disc_CAISO_D))
-    disc_CAISO_D.head()
+    disc_ = disc[(disc["respondent"] == REGION) & (disc["type"] == "D")]
+    print(len(disc_))
+    disc_.head()
 
 data = fetch(FREQUENCY, REGION, START, END)
-print("Test rows:", len(data))
-print(data.head())
+
+if INFO_MODE:
+    print("Test rows:", len(data))
+    print(data.head())
+
+    print(data.shape)
+    print(data.columns)
+
+#Load data into raw folder
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(BASE_DIR)
+
+output_path = os.path.join(f"{BASE_DIR}","data", "raw", "EIA", "{REGION}_DEMAND_{START}_{END}.csv")
+data.to_csv(output_path, index = False)
