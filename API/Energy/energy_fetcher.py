@@ -136,18 +136,22 @@ if INFO_MODE:
     print(len(disc_))
     disc_.head()
 
-data = fetch(FREQUENCY, REGION, START, END)
-
-if INFO_MODE:
-    print("Test rows:", len(data))
-    print(data.head())
-
-    print(data.shape)
-    print(data.columns)
-
-#Load data into raw folder
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-print(BASE_DIR)
+output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
 
-output_path = os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv")
-data.to_csv(output_path, index = False)
+if output_path.exists():
+    data = pd.read_csv(output_path)
+    print(f"Loaded cache from {output_path} into dataframe.")
+
+else:
+    data = fetch(FREQUENCY, REGION, START, END)
+
+    if INFO_MODE:
+        print("Test rows:", len(data))
+        print(data.head())
+
+        print(data.shape)
+        print(data.columns)
+
+    #Load data into raw folder
+    data.to_csv(output_path, index = False)
