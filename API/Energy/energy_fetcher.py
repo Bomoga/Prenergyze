@@ -3,6 +3,7 @@ import os
 import requests, json, time, csv
 from pathlib import Path
 import pandas as pd
+import matplotlib
 
 #Set 'True' for debug info
 INFO_MODE = False
@@ -155,3 +156,7 @@ else:
 
     #Load data into raw folder
     data.to_csv(output_path, index = False)
+
+if INFO_MODE:
+    ax = data.plot.line(figsize = (12,6))
+    ax.set_title("Demand over time (FPL)")
