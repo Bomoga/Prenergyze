@@ -1,3 +1,13 @@
+'''
+Summary:
+This script automates the extraction and preprocessing of EIA API data. 
+
+Usage: 
+Input respondent code to specify which grid operator (FPL, MISO, etc.) you want to extract data from.
+
+Authored by: 
+Adrian Morton
+'''
 ## Core imports
 import os 
 import requests, json, time, csv
@@ -111,7 +121,7 @@ def fetch(frequency, region, start, end, length = 5000, session = None):
         return pd.DataFrame()
     return pd.concat(frames, ignore_index = True)
 
-#Debug helper function to find out available parameters
+#Debug helper function to find out available parameters and respondents
 def discover_available(frequency, start, end, length = 1000, session = None):
     s = session or requests.Session()
     params = {
@@ -161,15 +171,16 @@ if INFO_MODE:
     print(len(disc_))
     disc_.head()
 
+#########################################################################################################
 
-####################################################################################################
-
+## Obtain program directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-REGION = input("Input region to acquire data from...")
+REGION = input("Input respondent code to acquire data from...")
 
 output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
 
+## Load cache if data has already been extracted, fetch it if not
 if output_path.exists():
     data = pd.read_csv(output_path)
     print(f"Loaded cache from {output_path} into dataframe.")
@@ -187,8 +198,10 @@ else:
     data.to_csv(output_path, index = False)
 
 data = clean(data)
+
 output_path = Path(os.path.join(f"{BASE_DIR}","data","processed", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
     
+## If cleaned data has not been loaded yet, load it into data/processed/EIA folder
 if output_path.exists():
     print(f"Data already cleaned and loaded at {output_path}")
 else:
