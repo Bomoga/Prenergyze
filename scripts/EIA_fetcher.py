@@ -23,7 +23,7 @@ def clean(data):
     data.loc[data['value'] < 0, 'value'] = np.nan
 
     ## Remove duplicates
-    data.drop_duplicates(keep = 'last', inplace = True)
+    data.drop_duplicates(subset = 'period', keep = 'last', inplace = True)
 
     ## Handle outliers
     mean = data['value'].mean()
@@ -33,9 +33,10 @@ def clean(data):
 
     ## Convert period timestamps to DateTime object format
     data['period'] = pd.to_datetime(data['period'], format="%Y-%m-%dT%H")  
-    data = data.set_index('period')
+    data = data.set_index('period', drop = False)
 
     ## Fill back
+    data = data.sort_index()
     data['value'] = data['value'].interpolate(method="time")
 
     return data
@@ -182,11 +183,14 @@ else:
         print(data.shape)
         print(data.columns)
 
-    #Load raw data into raw folder
+    ## Load raw data into raw folder
     data.to_csv(output_path, index = False)
 
-    clean(data)
-
-    ax = data.plot.line(figsize = (12,6))
-    ax.set_title("Demand over time (FPL)")
+data = clean(data)
+output_path = Path(os.path.join(f"{BASE_DIR}","data","processed", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
     
+if output_path.exists():
+    print(f"Data already cleaned and loaded at {output_path}")
+else:
+    ## Load cleaned data into processed folder
+    data.to_csv(output_path, index = False)
