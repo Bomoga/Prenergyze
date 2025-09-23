@@ -1,4 +1,4 @@
-#Core imports
+## Core imports
 import os 
 import requests, json, time, csv
 from pathlib import Path
@@ -6,21 +6,24 @@ import pandas as pd
 import matplotlib
 import numpy as np
 
-#Set 'True' for debug info
+## Set 'True' for debug info
 INFO_MODE = False
 
-#US EIA API Access
+## US EIA API Access
 API_KEY = os.environ.get("EIA_API_KEY", "mq7cQLfepEbZ674BT2NOHHvhMs0pzbglrXM3Gdfn")
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 
 FREQUENCY = "hourly"
-REGION = "MISO"
+REGION = "FPL"
 START = "2019-01-01T00"
 END = "2025-09-20T00"
 
 def clean(data):
     ## Remove negatives
     data.loc[data['value'] < 0, 'value'] = np.nan
+
+    ## Remove duplicates
+    data.drop_duplicates(keep = 'last', inplace = True)
 
     ## Handle outliers
     mean = data['value'].mean()
@@ -157,7 +160,13 @@ if INFO_MODE:
     print(len(disc_))
     disc_.head()
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+####################################################################################################
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+REGION = input("Input region to acquire data from...")
+
 output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
 
 if output_path.exists():
@@ -170,14 +179,14 @@ else:
     if INFO_MODE:
         print("Test rows:", len(data))
         print(data.head())
-
         print(data.shape)
         print(data.columns)
 
-    #Load data into raw folder
+    #Load raw data into raw folder
     data.to_csv(output_path, index = False)
 
-data = clean(data)
+    clean(data)
 
-ax = data.plot.line(figsize = (12,6))
-ax.set_title("Demand over time (FPL)")
+    ax = data.plot.line(figsize = (12,6))
+    ax.set_title("Demand over time (FPL)")
+    
