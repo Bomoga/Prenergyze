@@ -49,8 +49,6 @@ def clean(data):
     data = data.sort_index()
     data['value'] = data['value'].interpolate(method="time")
 
-    return data
-
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
     frames = [] 
@@ -197,7 +195,7 @@ else:
     ## Load raw data into raw folder
     data.to_csv(output_path, index = False)
 
-data = clean(data)
+clean(data)
 
 output_path = Path(os.path.join(f"{BASE_DIR}","data","processed", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
     
