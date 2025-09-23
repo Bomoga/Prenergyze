@@ -4,6 +4,7 @@ import requests, json, time, csv
 from pathlib import Path
 import pandas as pd
 import matplotlib
+import numpy as np
 
 #Set 'True' for debug info
 INFO_MODE = False
@@ -13,9 +14,28 @@ API_KEY = os.environ.get("EIA_API_KEY", "mq7cQLfepEbZ674BT2NOHHvhMs0pzbglrXM3Gdf
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 
 FREQUENCY = "hourly"
-REGION = "FPL"
+REGION = "MISO"
 START = "2019-01-01T00"
 END = "2025-09-20T00"
+
+def clean(data):
+    ## Remove negatives
+    data.loc[data['value'] < 0, 'value'] = np.nan
+
+    ## Handle outliers
+    mean = data['value'].mean()
+    std = data['value'].std()
+    z = (data['value'] - mean) / std
+    data.loc[abs(z) > 4, 'value'] = np.nan
+
+    ## Convert period timestamps to DateTime object format
+    data['period'] = pd.to_datetime(data['period'], format="%Y-%m-%dT%H")  
+    data = data.set_index('period')
+
+    ## Fill back
+    data['value'] = data['value'].interpolate(method="time")
+
+    return data
 
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
@@ -157,6 +177,7 @@ else:
     #Load data into raw folder
     data.to_csv(output_path, index = False)
 
-if INFO_MODE:
-    ax = data.plot.line(figsize = (12,6))
-    ax.set_title("Demand over time (FPL)")
+data = clean(data)
+
+ax = data.plot.line(figsize = (12,6))
+ax.set_title("Demand over time (FPL)")
