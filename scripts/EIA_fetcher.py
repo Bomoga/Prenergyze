@@ -28,7 +28,7 @@ REGION = "FPL"
 START = "2019-01-01T00"
 END = "2025-09-20T00"
 
-def clean(data):
+def preprocess(data):
     ## Remove negatives
     data.loc[data['value'] < 0, 'value'] = np.nan
 
@@ -48,6 +48,8 @@ def clean(data):
     ## Fill back
     data = data.sort_index()
     data['value'] = data['value'].interpolate(method="time")
+
+    return data
 
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
@@ -195,7 +197,7 @@ else:
     ## Load raw data into raw folder
     data.to_csv(output_path, index = False)
 
-clean(data)
+data = preprocess(data)
 
 output_path = Path(os.path.join(f"{BASE_DIR}","data","processed", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
     
