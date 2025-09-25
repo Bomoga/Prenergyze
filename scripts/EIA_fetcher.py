@@ -1,8 +1,14 @@
 '''
 Summary:
+<<<<<<< HEAD
 This script automates the extraction of EIA API data. 
+=======
+This script automates the extraction and preprocessing of EIA API data and deposits
+the raw and processed data into separate folders respectively.
+>>>>>>> c1e252dd5b2374f9222ca4cf56344ff0483d7acb
 
 Usage: 
+Run the script. 
 Input respondent code to specify which grid operator (FPL, MISO, etc.) you want to extract data from.
 
 Authored by: 

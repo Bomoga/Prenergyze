@@ -1,13 +1,34 @@
+<<<<<<< HEAD
 import os, requests
+=======
+'''
+Summary:
+This script automates the extraction and preprocessing of NASA POWER API data and deposits
+the raw and processed data into separate folders respectively. 
+
+Usage: 
+Currently no input functionality, simply run the script.
+
+Authored by: 
+Adrian Morton
+'''
+
+## Core imports
+import os 
+import requests, json, time, csv
+>>>>>>> c1e252dd5b2374f9222ca4cf56344ff0483d7acb
 from pathlib import Path
 import pandas as pd
 import numpy as np
 from io import StringIO
 
+## Set 'True' for debug info
 INFO_MODE = False
 
+## Base URL for NASA POWER API
 BASE_URL = "https://power.larc.nasa.gov/api/temporal/hourly/point"
 
+## API parameter values ()
 PARAMETERS = "T2M,PRECTOT,WS2M,ALLSKY_SFC_SW_DWN,RH2M"
 START = "20190101"
 END = "20250920"
