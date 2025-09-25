@@ -1,6 +1,6 @@
 '''
 Summary:
-This script automates the extraction and preprocessing of EIA API data. 
+This script automates the extraction of EIA API data. 
 
 Usage: 
 Input respondent code to specify which grid operator (FPL, MISO, etc.) you want to extract data from.
@@ -9,12 +9,9 @@ Authored by:
 Adrian Morton
 '''
 ## Core imports
-import os 
-import requests, json, time, csv
+import os, requests
 from pathlib import Path
 import pandas as pd
-import matplotlib
-import numpy as np
 
 ## Set 'True' for debug info
 INFO_MODE = False
@@ -27,29 +24,6 @@ FREQUENCY = "hourly"
 REGION = "FPL"
 START = "2019-01-01T00"
 END = "2025-09-20T00"
-
-def preprocess(data):
-    ## Remove negatives
-    data.loc[data['value'] < 0, 'value'] = np.nan
-
-    ## Remove duplicates
-    data.drop_duplicates(subset = 'period', keep = 'last', inplace = True)
-
-    ## Handle outliers
-    mean = data['value'].mean()
-    std = data['value'].std()
-    z = (data['value'] - mean) / std
-    data.loc[abs(z) > 4, 'value'] = np.nan
-
-    ## Convert period timestamps to DateTime object format
-    data['period'] = pd.to_datetime(data['period'], format="%Y-%m-%dT%H")  
-    data = data.set_index('period', drop = False)
-
-    ## Fill back
-    data = data.sort_index()
-    data['value'] = data['value'].interpolate(method="time")
-
-    return data
 
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
@@ -195,15 +169,4 @@ else:
         print(data.columns)
 
     ## Load raw data into raw folder
-    data.to_csv(output_path, index = False)
-
-data = preprocess(data)
-
-output_path = Path(os.path.join(f"{BASE_DIR}","data","processed", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
-    
-## If cleaned data has not been loaded yet, load it into data/processed/EIA folder
-if output_path.exists():
-    print(f"Data already cleaned and loaded at {output_path}")
-else:
-    ## Load cleaned data into processed folder
     data.to_csv(output_path, index = False)
