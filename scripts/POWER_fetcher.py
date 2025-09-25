@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-import os, requests
-=======
 '''
 Summary:
 This script automates the extraction and preprocessing of NASA POWER API data and deposits
@@ -16,7 +13,6 @@ Adrian Morton
 ## Core imports
 import os 
 import requests, json, time, csv
->>>>>>> c1e252dd5b2374f9222ca4cf56344ff0483d7acb
 from pathlib import Path
 import pandas as pd
 import numpy as np
