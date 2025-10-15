@@ -18,7 +18,6 @@ API_KEY = os.getenv("EIA_API_KEY")
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 
 FREQUENCY = "hourly"
-REGION = "FPL"
 START = "2019-01-01T00"
 END = "2025-09-20T00"
 
@@ -52,7 +51,7 @@ def fetch(frequency, region, start, end, length = 5000, session = None):
             response.raise_for_status()
             data = response.json()
             resp = data.get("response", {})
-            rows = data.get("response", {}).get("data", [])
+            rows = data.get("response", {}).get("data", []) 
 
         except Exception as e:
             print(f"Error fetching data from API.", e)
@@ -84,23 +83,19 @@ def fetch(frequency, region, start, end, length = 5000, session = None):
     
     return pd.concat(frames, ignore_index = True)
 
-def main():
-    BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
+REGION = input("Input respondent code to acquire data from...")
 
-    REGION = input("Input respondent code to acquire data from...")
+output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
 
-    output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))
+## Load cache if data has already been extracted, fetch it if not
+if output_path.exists():
+    data = pd.read_csv(output_path)
+    print(f"Loaded cache from {output_path} into dataframe.")
 
-    ## Load cache if data has already been extracted, fetch it if not
-    if output_path.exists():
-        data = pd.read_csv(output_path)
-        print(f"Loaded cache from {output_path} into dataframe.")
+else:
+    data = fetch(FREQUENCY, REGION, START, END)
 
-    else:
-        data = fetch(FREQUENCY, REGION, START, END)
+    ## Load raw data into raw folder
+    data.to_csv(output_path, index = False)
 
-        ## Load raw data into raw folder
-        data.to_csv(output_path, index = False)
-
-if __file__ == "__main__":
-    main()
