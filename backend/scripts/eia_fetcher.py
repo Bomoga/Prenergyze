@@ -10,9 +10,11 @@ Adrian Morton
 import os, requests
 from pathlib import Path
 import pandas as pd
+from dotenv import load_dotenv
 
 ## US EIA API Access
-API_KEY = os.environ.get("EIA_API_KEY", "mq7cQLfepEbZ674BT2NOHHvhMs0pzbglrXM3Gdfn")
+load_dotenv()
+API_KEY = os.getenv("EIA_API_KEY")
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 
 FREQUENCY = "hourly"
