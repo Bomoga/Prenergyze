@@ -1,0 +1,14 @@
+,Column Name,Non-Null Count,Null Count,Data Type
+0,date,2481,0,object
+1,precipitation__mm__day,2481,0,float64
+2,temp_avg_C,2481,0,float64
+3,temp_max_C,2481,0,float64
+4,temp_min_C,2481,0,float64
+5,humidity_percent,2481,0,float64
+6,wind_speed_mps,2481,0,float64
+7,solar_radiation_kwh_m2_day,2481,0,float64
+8,surface_pressure_kPa,2481,0,float64
+9,skin_temp_C,2481,0,float64
+10,specific_humidity_gkg,2481,0,float64
+11,soil_moisture_top_percent,2481,0,float64
+12,soil_moisture_root_percent,2481,0,float64
