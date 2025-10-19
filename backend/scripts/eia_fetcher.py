@@ -18,8 +18,8 @@ API_KEY = os.getenv("EIA_API_KEY")
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
 
 FREQUENCY = "hourly"
-START = "2019-01-01T00"
-END = "2025-09-20T00"
+START = "2023-09-01T00"
+END = "2025-09-01T00"
 
 #Fetches data from API and returns a concatenated pandas dataframe
 def fetch(frequency, region, start, end, length = 5000, session = None):
