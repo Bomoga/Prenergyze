@@ -1,0 +1,8 @@
+,Column Name,Non-Null Count,Null Count,Data Type
+0,period,58170,0,object
+1,respondent,58170,0,object
+2,respondent-name,58170,0,object
+3,type,58170,0,object
+4,type-name,58170,0,object
+5,value,58170,0,float64
+6,value-units,58170,0,object
