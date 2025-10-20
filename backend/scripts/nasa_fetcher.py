@@ -12,6 +12,10 @@ url = url = "https://power.larc.nasa.gov/api/temporal/hourly/point"
 def fetch(start, end, latitude, longitude, community, parameters):
     s = requests.Session()
 
+    # sanitize parameters: ensure comma-separated, no spaces
+    if isinstance(parameters, str):
+        parameters = ",".join(p.strip() for p in parameters.split(",") if p.strip())
+
     params = {
         "start": start,
         "end": end,
@@ -19,14 +23,20 @@ def fetch(start, end, latitude, longitude, community, parameters):
         "longitude": longitude,
         "community": community,
         "parameters": parameters,
-        "time-standard": "utc",         
+        "time-standard": "utc",
         "format": "json",
-                       
-        }
-    
-    #GET request
-    r = s.get(url, params = params, timeout = 60) #get request
-    r.raise_for_status() #check if sm went wrong
+    }
+
+    # GET request
+    r = s.get(url, params=params, timeout=60)  # get request
+    if r.status_code != 200:
+        print(f"HTTP {r.status_code} returned from API")
+        # print response body for debugging
+        try:
+            print(r.text)
+        except Exception:
+            print("(no response body)")
+    r.raise_for_status()  # check if something went wrong
     j = r.json() #j is the entire json dictionary from nasa
 
     # Extract the actual hourly data block
@@ -49,8 +59,8 @@ def fetch(start, end, latitude, longitude, community, parameters):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # create a filename that includes start/end and a short UTC timestamp
-    from datetime import datetime
-    now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     # sanitize lat/lon for filename (remove minus and replace dot)
     lat_s = str(latitude).replace('-', 'm').replace('.', 'p')
     lon_s = str(longitude).replace('-', 'm').replace('.', 'p')
@@ -69,10 +79,10 @@ def fetch(start, end, latitude, longitude, community, parameters):
     return data
 
 fetch(
-    start = "20250101",
-    end = "20251231",
+    start = "20230101",
+    end = "20231231",
     latitude = 27.6648,
     longitude = -81.5158,
     community = "re",
-    parameters = "T2M,WS2M,RH2M,PRECTOTCORR"
+    parameters = "PRECTOTCORR,T2M,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PS,TS,QV2M,GWETTOP,GWETROOT"
 )
