@@ -1,4 +1,4 @@
-
+#this one is made by rhode
 ## Core imports
 import os, requests
 import csv
@@ -20,7 +20,8 @@ def fetch(start, end, latitude, longitude, community, parameters):
         "community": community,
         "parameters": parameters,
         "time-standard": "utc",         
-        "format": "json",               
+        "format": "json",
+                       
         }
     
     #GET request
@@ -43,9 +44,18 @@ def fetch(start, end, latitude, longitude, community, parameters):
             row[var] = param_block[var].get(ts, "") #Add each variable’s value at that hour
         data.append(row)
 
-        # Make sure output folder exists
-        out_path = "data/raw/nasa/nasa.csv"
-        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    # Make sure output folder exists and generate a unique filename per run
+    out_dir = Path("data/raw/nasa")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # create a filename that includes start/end and a short UTC timestamp
+    from datetime import datetime
+    now = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    # sanitize lat/lon for filename (remove minus and replace dot)
+    lat_s = str(latitude).replace('-', 'm').replace('.', 'p')
+    lon_s = str(longitude).replace('-', 'm').replace('.', 'p')
+    filename = f"nasa_{start}_{end}_{lat_s}_{lon_s}_{now}.csv"
+    out_path = out_dir / filename
 
 
     # Write to CSV
@@ -59,10 +69,10 @@ def fetch(start, end, latitude, longitude, community, parameters):
     return data
 
 fetch(
-    start="20250101",
-    end="20250107",
-    latitude=25.7617,
-    longitude=-80.1918,
-    community="re",
-    parameters="T2M,WS2M,RH2M,PRECTOTCORR"
+    start = "20250101",
+    end = "20251231",
+    latitude = 27.6648,
+    longitude = -81.5158,
+    community = "re",
+    parameters = "T2M,WS2M,RH2M,PRECTOTCORR"
 )
