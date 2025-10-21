@@ -1,62 +1,174 @@
 import requests
 import pandas as pd
-import os
 from pathlib import Path
-url = "https://power.larc.nasa.gov/api/temporal/daily/point"
+from datetime import datetime, timezone
 
-params = {
-    "start": "20190101",
-    "end": "20251016",
-    "latitude": 27.6648,
-    "longitude": -81.5158,
-    "community": "re",
-    "parameters": "PRECTOTCORR,T2M,T2M_MAX,T2M_MIN,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PS,TS,QV2M,GWETTOP,GWETROOT",
-    "format": "CSV",
-    "user": "KhanhTruong",
-    "header": "true",
-    "units": "metric"
-}
+URL_HOURLY = "https://power.larc.nasa.gov/api/temporal/hourly/point"
+URL_DAILY = "https://power.larc.nasa.gov/api/temporal/daily/point"
 
-# Call the API
-response = requests.get(url, params=params)
-response.raise_for_status()  # ensure request succeeded
+HOURLY_ONLY = ["T2M", "RH2M", "WS2M", "ALLSKY_SFC_SW_DWN", "PS", "TS", "QV2M"]
+DAILY_ONLY = ["PRECTOTCORR", "GWETTOP", "GWETROOT",
+              "T2M_MAX", "T2M_MIN", "ALLSKY_SFC_SW_DWN"]
 
-with open("florida_nasa_power_2019_2025", "w", encoding="utf-8") as f:
-    f.write(response.text)
-path = "data/nasa/data/florida_nasa_power_2019_2025.csv"
 
-with open(path) as f:
-    for i in range(25):
-        print(i, f.readline().rstrip())
+def _sanitize_params(parameters):
+    if isinstance(parameters, str):
+        return ",".join(p.strip() for p in parameters.split(",") if p.strip())
+    return ",".join(str(p).strip() for p in parameters if str(p).strip())
 
-df = pd.read_csv(path, skiprows=20,
-                 on_bad_lines="skip", engine="python")
-print(df.head())
-print(df.info())
-df = df.rename(columns={
-    "YEAR": "year",
-    "MO": "month",
-    "DY": "day",
-    "PRECTOTCORR": "precipitation__mm__day",
-    "T2M": "temp_avg_C",
-    "T2M_MAX": "temp_max_C",
-    "T2M_MIN": "temp_min_C",
-    "RH2M": "humidity_percent",
-    "WS2M": "wind_speed_mps",
-    "ALLSKY_SFC_SW_DWN": "solar_radiation_kwh_m2_day",
-    "PS": "surface_pressure_kPa",
-    "TS": "skin_temp_C",
-    "QV2M": "specific_humidity_gkg",
-    "GWETTOP": "soil_moisture_top_percent",
-    "GWETROOT": "soil_moisture_root_percent"
-})
 
-df["date"] = pd.to_datetime(df[["year", "month", "day"]])
-df = df.drop(columns=["year", "month", "day"])
+def _safe_numeric(df: pd.DataFrame, cols):
+    for c in cols:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    return df
 
-print(df.isna().sum())
-cols = ["date"] + [c for c in df.columns if c != "date"]
-df = df[cols]
 
-print(df.head())
-df.to_csv(path, index=False)
+def fetch_hourly(start: str,
+                 end: str,
+                 latitude: float,
+                 longitude: float,
+                 community: str = "re",
+                 parameters=HOURLY_ONLY,
+                 out_dir: str = "data/raw/nasa",
+                 save_csv: bool = True) -> pd.DataFrame:
+
+    params = {
+        "start": start,
+        "end": end,
+        "latitude": latitude,
+        "longitude": longitude,
+        "community": community,
+        "parameters": _sanitize_params(parameters),
+        "time-standard": "utc",
+        "format": "json",
+        "units": "metric",
+        "header": "true",
+    }
+
+    r = requests.get(URL_HOURLY, params=params, timeout=90)
+    if r.status_code != 200:
+        print(f"HTTP {r.status_code} returned from API")
+        try:
+            print(r.text)
+        except Exception:
+            pass
+    r.raise_for_status()
+    j = r.json()
+
+    param_block = j.get("properties", {}).get("parameter", {})
+    if not param_block:
+        raise ValueError("No hourly 'parameter' block returned.")
+
+    timestamps = sorted({t for series in param_block.values()
+                        for t in series.keys()})
+    variables = sorted(param_block.keys())
+
+    rows = []
+    for ts in timestamps:
+        row = {"datetime_utc_str": str(ts)}
+        for var in variables:
+            row[var] = param_block[var].get(ts, None)
+        rows.append(row)
+
+    df_h = pd.DataFrame(rows)
+
+    first = str(df_h["datetime_utc_str"].iloc[0])
+    fmt = "%Y%m%d%H" if len(first) == 10 else "%Y%m%d%H%M"
+    dt = pd.to_datetime(df_h["datetime_utc_str"].astype(
+        str), format=fmt, utc=True)
+    df_h["datetime_utc"] = dt.dt.strftime("%Y-%m-%d %H")
+    df_h.drop(columns=["datetime_utc_str"], inplace=True)
+
+    df_h = _safe_numeric(df_h, variables)
+    df_h = df_h.sort_values("datetime_utc").reset_index(drop=True)
+    df_h = df_h[["datetime_utc"] + variables]
+
+    if save_csv:
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        lat_s = str(latitude).replace("-", "m").replace(".", "p")
+        lon_s = str(longitude).replace("-", "m").replace(".", "p")
+        fname = f"nasa_hourly_{start}_{end}_{lat_s}_{lon_s}_{stamp}.csv"
+        df_h.to_csv(out / fname, index=False)
+
+    return df_h
+
+
+def fetch_daily(start: str,
+                end: str,
+                latitude: float,
+                longitude: float,
+                community: str = "re",
+                parameters=DAILY_ONLY,
+                out_dir: str = "data/raw/nasa",
+                save_csv: bool = True) -> pd.DataFrame:
+
+    params = {
+        "start": start,
+        "end": end,
+        "latitude": latitude,
+        "longitude": longitude,
+        "community": community,
+        "parameters": _sanitize_params(parameters),
+        "format": "json",
+        "units": "metric",
+        "header": "true",
+    }
+
+    r = requests.get(URL_DAILY, params=params, timeout=90)
+    r.raise_for_status()
+    j = r.json()
+
+    block = j.get("properties", {}).get("parameter", {})
+    if not block:
+        raise ValueError("No daily 'parameter' block returned.")
+
+    dates = sorted({d for series in block.values() for d in series.keys()})
+    cols = sorted(block.keys())
+
+    records = []
+    for d in dates:
+        row = {"date": pd.to_datetime(d, format="%Y%m%d").date()}
+        for c in cols:
+            row[c] = block[c].get(d, None)
+        records.append(row)
+
+    df_d = pd.DataFrame(records).sort_values("date").reset_index(drop=True)
+    df_d = _safe_numeric(df_d, cols)
+
+    if save_csv:
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        lat_s = str(latitude).replace("-", "m").replace(".", "p")
+        lon_s = str(longitude).replace("-", "m").replace(".", "p")
+        fname = f"nasa_daily_{start}_{end}_{lat_s}_{lon_s}.csv"
+        df_d.to_csv(out / fname, index=False)
+
+    return df_d
+
+
+def get_power_data(start: str, end: str, lat: float, lon: float):
+    """Returns (df_hourly, df_daily). Also writes CSVs if save_csv=True in the functions."""
+    df_h = fetch_hourly(start, end, lat, lon,
+                        parameters=HOURLY_ONLY, save_csv=True)
+    df_d = fetch_daily(start, end, lat, lon,
+                       parameters=DAILY_ONLY,  save_csv=True)
+    return df_h, df_d
+
+
+if __name__ == "__main__":
+    LAT, LON = 27.6648, -81.5158
+    START, END = "20230101", "20251231"
+
+    df_hourly, df_daily = get_power_data(START, END, LAT, LON)
+
+
+"""
+    out = Path("data/processed/nasa")
+    out.mkdir(parents=True, exist_ok=True)
+    merged_name = f"nasa_merged_hourly_with_daily_{START}_{END}.csv"
+    out_path = out / merged_name
+    df.to_csv(out_path, index=False) 
+"""

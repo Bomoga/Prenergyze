@@ -1,6 +1,7 @@
-#this one is made by rhode
-## Core imports
-import os, requests
+
+# Core imports
+import os
+import requests
 import csv
 from pathlib import Path
 import pandas as pd
@@ -8,13 +9,13 @@ from dotenv import load_dotenv
 url = url = "https://power.larc.nasa.gov/api/temporal/hourly/point"
 
 
-
 def fetch(start, end, latitude, longitude, community, parameters):
     s = requests.Session()
 
     # sanitize parameters: ensure comma-separated, no spaces
     if isinstance(parameters, str):
-        parameters = ",".join(p.strip() for p in parameters.split(",") if p.strip())
+        parameters = ",".join(p.strip()
+                              for p in parameters.split(",") if p.strip())
 
     params = {
         "start": start,
@@ -37,21 +38,23 @@ def fetch(start, end, latitude, longitude, community, parameters):
         except Exception:
             print("(no response body)")
     r.raise_for_status()  # check if something went wrong
-    j = r.json() #j is the entire json dictionary from nasa
+    j = r.json()  # j is the entire json dictionary from nasa
 
     # Extract the actual hourly data block
     props = j.get("properties", {})
     param_block = props.get("parameter", {})
 
     # Collect all timestamps and variable names
-    timestamps = sorted({t for series in param_block.values() for t in series.keys()})
+    timestamps = sorted({t for series in param_block.values()
+                        for t in series.keys()})
     variables = sorted(param_block.keys())
 
-    data =[] #list
-    for ts in timestamps: #loop through each hour
-        row = {"datetime_utc": ts}#start a new row dict with the time
+    data = []  # list
+    for ts in timestamps:  # loop through each hour
+        row = {"datetime_utc": ts}  # start a new row dict with the time
         for var in variables:
-            row[var] = param_block[var].get(ts, "") #Add each variable’s value at that hour
+            # Add each variable’s value at that hour
+            row[var] = param_block[var].get(ts, "")
         data.append(row)
 
     # Make sure output folder exists and generate a unique filename per run
@@ -67,7 +70,6 @@ def fetch(start, end, latitude, longitude, community, parameters):
     filename = f"nasa_{start}_{end}_{lat_s}_{lon_s}_{now}.csv"
     out_path = out_dir / filename
 
-
     # Write to CSV
     with open(out_path, "w", newline="") as f:
         # Combine the timestamp column with all variable names for the CSV header
@@ -78,11 +80,12 @@ def fetch(start, end, latitude, longitude, community, parameters):
     print(f"saved {len(data)} rows")
     return data
 
+
 fetch(
-    start = "20230101",
-    end = "20231231",
-    latitude = 27.6648,
-    longitude = -81.5158,
-    community = "re",
-    parameters = "PRECTOTCORR,T2M,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PS,TS,QV2M,GWETTOP,GWETROOT"
+    start="20230101",
+    end="20231231",
+    latitude=27.6648,
+    longitude=-81.5158,
+    community="re",
+    parameters="PRECTOTCORR,T2M,RH2M,WS2M,ALLSKY_SFC_SW_DWN,PS,TS,QV2M,GWETTOP,GWETROOT"
 )
