@@ -1,5 +1,5 @@
 '''
-Developers: Khanh Truong, Rhode Sanchez
+Developers: Khanh Truong, Rhode Sanchez, Khang Ho
 Debugging: Adrian Morton
 '''
 import openmeteo_requests
