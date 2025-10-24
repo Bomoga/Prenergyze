@@ -1,0 +1,19 @@
+Columns,Data Types,Non-Null Counts,Missing Values,Unique Values
+Unnamed: 0,int64,17568,0,17568
+date,object,17568,0,17568
+temperature_2m,float64,17568,0,671
+relative_humidity_2m,float64,17568,0,15100
+apparent_temperature,float64,17568,0,17553
+precipitation,float64,17568,0,108
+pressure_msl,float64,17568,0,330
+cloud_cover,float64,17568,0,101
+cloud_cover_low,float64,17568,0,101
+cloud_cover_mid,float64,17568,0,101
+cloud_cover_high,float64,17568,0,101
+et0_fao_evapotranspiration,float64,17568,0,13039
+vapour_pressure_deficit,float64,17568,0,15095
+wind_speed_10m,float64,17568,0,3354
+wind_direction_10m,float64,17568,0,6041
+wind_gusts_10m,float64,17568,0,227
+sunshine_duration,float64,17568,0,1512
+shortwave_radiation,float64,17568,0,986

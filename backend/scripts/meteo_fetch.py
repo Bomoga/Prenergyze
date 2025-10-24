@@ -72,3 +72,22 @@ df.to_csv(output_path)
 print(df.describe())
 print(df.isna().sum())
 
+
+# # Construct the metadata report for meteo data
+csv_path = Path(BASE_DIR, "data", "raw", "meteo", "METEO_28.084358_-82.372894_2023-09-01_2025-09-01.csv")
+data = pd.read_csv(csv_path)
+
+metadata = {
+    "Columns": data.columns,
+    "Data Types": data.dtypes,
+    "Non-Null Counts": data.notnull().sum(),
+    "Missing Values": data.isnull().sum(),
+    "Unique Values": data.nunique()
+}
+
+# Convert metadata json to DataFrame
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+metadata_df = pd.DataFrame(metadata)
+metadata_path = (Path(BASE_DIR, "reports", "metadata", "meteo_metadata_report.csv"))
+metadata_df.to_csv(metadata_path, index=False)
+
