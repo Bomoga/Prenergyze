@@ -1,2 +1,5 @@
 openmeteo-requests
-requests-cache retry-requests numpy pandas
+requests-cache 
+retry-requests 
+numpy 
+pandas
