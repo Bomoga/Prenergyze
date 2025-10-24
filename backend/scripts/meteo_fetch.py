@@ -38,7 +38,6 @@ def fetch_openmeteo(lat, lon, start_date, end_date, hourly_vars):
     print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
 
     hourly = response.Hourly()
-    hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
 
     hourly_data = {"date": pd.date_range(
 	start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
@@ -47,9 +46,10 @@ def fetch_openmeteo(lat, lon, start_date, end_date, hourly_vars):
 	inclusive = "left"
     )}
 
-    hourly_data["temperature_2m"] = hourly_temperature_2m
+    for i in range(len(hourly_vars)):
+        hourly_data[hourly_vars[i]] = hourly.Variables(i).ValuesAsNumpy()
+
     hourly_dataframe = pd.DataFrame(data = hourly_data)
-    
     return hourly_dataframe
     
 vars_ = [
@@ -57,7 +57,7 @@ vars_ = [
     "precipitation", "pressure_msl", "cloud_cover",
     "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
     "et0_fao_evapotranspiration", "vapour_pressure_deficit",
-    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m"
+    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "sunshine_duration"
 ]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -66,6 +66,7 @@ output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "meteo", f"METEO_{l
 output_path.parent.mkdir(parents=True, exist_ok = True)
 
 df = fetch_openmeteo(lat, lon, start_date, end_date, vars_)
+df["date"] = df["date"].dt.tz_localize(None)
 df.to_csv(output_path)
 print(df.describe())
 print(df.isna().sum())

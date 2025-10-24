@@ -1,10 +1,5 @@
 '''
-Usage: 
-Run the script. 
-Input respondent code to specify which grid operator (FPL, MISO, etc.) you want to extract data from.
-
-Authored by: 
-Adrian Morton
+Developers: Adrian Morton
 '''
 ## Core imports
 import os, requests
@@ -77,7 +72,7 @@ def fetch(frequency, region, start, end, length = 5000, session = None):
         
         if (total and offset >= total) or (len(rows) < length):
              break
-        
+
     if not frames:
         return pd.DataFrame()
     
@@ -95,6 +90,7 @@ if output_path.exists():
 
 else:
     data = fetch(FREQUENCY, REGION, START, END)
+    data["period"] = pd.to_datetime(data["period"])
 
     ## Load raw data into raw folder
     data.to_csv(output_path, index = False)
