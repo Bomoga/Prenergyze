@@ -33,7 +33,7 @@ def fetch_openmeteo(lat, lon, start_date, end_date, hourly_vars):
 
     response = responses[0]
 
-    print(f"Coordinates: {response.Latitude}°N {response.Longitude()}°E")
+    print(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
     print(f"Elevation: {response.Elevation()} m asl")
     print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
 
