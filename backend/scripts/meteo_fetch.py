@@ -57,7 +57,8 @@ vars_ = [
     "precipitation", "pressure_msl", "cloud_cover",
     "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
     "et0_fao_evapotranspiration", "vapour_pressure_deficit",
-    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "sunshine_duration"
+    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", 
+    "sunshine_duration", "shortwave_radiation"
 ]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -70,3 +71,4 @@ df["date"] = df["date"].dt.tz_localize(None)
 df.to_csv(output_path)
 print(df.describe())
 print(df.isna().sum())
+
