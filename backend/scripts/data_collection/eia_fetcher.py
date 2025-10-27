@@ -78,7 +78,7 @@ def fetch(frequency, region, start, end, length = 5000, session = None):
     
     return pd.concat(frames, ignore_index = True)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 REGION = input("Input respondent code to acquire data from...")
 
 output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "EIA", f"{REGION}_DEMAND_{START}_{END}.csv"))

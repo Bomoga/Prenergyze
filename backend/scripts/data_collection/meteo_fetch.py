@@ -60,7 +60,7 @@ vars_ = [
     "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "sunshine_duration"
 ]
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 output_path = Path(os.path.join(f"{BASE_DIR}","data", "raw", "meteo", f"METEO_{lat}_{lon}_{start_date}_{end_date}.csv"))
 output_path.parent.mkdir(parents=True, exist_ok = True)
