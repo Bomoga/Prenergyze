@@ -3,3 +3,5 @@ requests-cache
 retry-requests 
 numpy 
 pandas
+matplotlib
+seaborn
