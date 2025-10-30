@@ -1,5 +1,5 @@
 '''
-Developers: Khanh Truong, Rhode Sanchez
+Developers: Khanh Truong, Rhode Sanchez, Khang Ho
 Debugging: Adrian Morton
 '''
 import openmeteo_requests
@@ -33,7 +33,7 @@ def fetch_openmeteo(lat, lon, start_date, end_date, hourly_vars):
 
     response = responses[0]
 
-    print(f"Coordinates: {response.Latitude}°N {response.Longitude()}°E")
+    print(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
     print(f"Elevation: {response.Elevation()} m asl")
     print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
 
@@ -57,7 +57,8 @@ vars_ = [
     "precipitation", "pressure_msl", "cloud_cover",
     "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
     "et0_fao_evapotranspiration", "vapour_pressure_deficit",
-    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "sunshine_duration"
+    "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", 
+    "sunshine_duration", "shortwave_radiation"
 ]
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -70,3 +71,23 @@ df["date"] = df["date"].dt.tz_localize(None)
 df.to_csv(output_path)
 print(df.describe())
 print(df.isna().sum())
+
+
+# # Construct the metadata report for meteo data
+csv_path = Path(BASE_DIR, "data", "raw", "meteo", "METEO_28.084358_-82.372894_2023-09-01_2025-09-01.csv")
+data = pd.read_csv(csv_path)
+
+metadata = {
+    "Columns": data.columns,
+    "Data Types": data.dtypes,
+    "Non-Null Counts": data.notnull().sum(),
+    "Missing Values": data.isnull().sum(),
+    "Unique Values": data.nunique()
+}
+
+# Convert metadata json to DataFrame
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+metadata_df = pd.DataFrame(metadata)
+metadata_path = (Path(BASE_DIR, "reports", "metadata", "meteo_metadata_report.csv"))
+metadata_df.to_csv(metadata_path, index=False)
+
