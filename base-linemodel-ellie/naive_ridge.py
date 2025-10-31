@@ -132,7 +132,7 @@ cols = [("relative_humidity_2m", "Load vs Humidity (Current)"),
         ]
 
 # define the present before subsplot, only keep the data thats in the columns
-present = [c for c, _ in cols if c in df.columns]
+present = [(c, t) for c, t in cols if c in df.columns]
 
 if not present:
     raise ValueError("No humidity columns found in df plot")
@@ -141,13 +141,11 @@ fig, axs = plt.subplots(1, len(present), figsize=(6*len(present), 5))
 if len(present) == 1:
     axs = [axs]
 
-for i, (col, title) in enumerate(cols):
-    if col not in df.columns:
-        continue
-    sns.scatterplot(data=df, x=col, y='load', alpha=0.3, s=12, ax=axs[i])
-    axs[i].set_title(title)
-    axs[i].set_xlabel("Relative Humidity (%)")
-    axs[i].set_ylabel("Electric Load (MW)")
+for ax, (col, title) in zip(axs, present):
+    sns.scatterplot(data=df, x=col, y='load', alpha=0.3, s=12, ax=ax)
+    ax.set_title(title)
+    ax.set_xlabel("Relative Humidity (%)")
+    ax.set_ylabel("Electric Load (MW)")
 plt.tight_layout()
 out_path2 = plot_dir/"load_vs_humidity_all.png"
 fig.savefig(out_path2, dpi=300)
@@ -170,32 +168,42 @@ fig.savefig(out_path, dpi=300)
 plt.close(fig)
 
 # shrink all the heavy tails data first
-features = ['load_lag_1h', 'load_lag_2h', 'load_lag_3h', 'load_lag_24h', 'load_lag_168h',
-            'temperature_2m', 'temperature_2m_lag_24h', 'temperature_2m_roll_mean_24h',
-            'apparent_temperature', 'apparent_temperature_lag_24h',
-            'relative_humidity_2m', 'pressure_msl',
-            'precipitation', 'precipitation_roll_sum_3h',
-            'hour_sin', 'hour_cos', 'dow_sin', 'dow_cos', 'month_sin', 'month_cos'
-            ]
-print(df[features].skew(numeric_only=True).sort_values(ascending=False))
+features_all = ['load_lag_1h', 'load_lag_2h', 'load_lag_3h', 'load_lag_24h', 'load_lag_168h',
+                'temperature_2m', 'temperature_2m_lag_24h', 'temperature_2m_roll_mean_24h',
+                'apparent_temperature', 'apparent_temperature_lag_24h',
+                'relative_humidity_2m', 'pressure_msl',
+                'precipitation', 'precipitation_roll_sum_3h',
+                'hour_sin', 'hour_cos', 'dow_sin', 'dow_cos', 'month_sin', 'month_cos'
+                ]
+features = [c for c in features_all if c in df.columns]
+missing = sorted(set(features_all)-set(features))
+if missing:
+    print("Emergency I LOST MY FEATURE")
 X = df[features].copy()
 Y = df['target'].copy()
+
+print(df[features].skew(numeric_only=True).sort_values(ascending=False))
+
 # u see the precipitation and roll sum 3h fucked up -> right skewed
-skewed_features = ['precipitation', 'precipitation_roll_sum_3h']
+skewed_candidates = ['precipitation', 'precipitation_roll_sum_3h']
+skewed_features = [c for c in skewed_candidates if c in features]
 normal_features = [c for c in features if c not in skewed_features]
 
 # scaling the data
+transformers = []
+if skewed_features:
+    skewed_pipe = Pipeline([
+        ('log1p', FunctionTransformer(np.log1p, validate=False)),
+        ('scale', StandardScaler())
+    ])
+    transformers.append(('skewed', skewed_pipe, skewed_features))
+if normal_features:
+    transformers.append(('normal', StandardScaler(), normal_features))
 
-skewed_pipe = Pipeline([
-    ('log1p', FunctionTransformer(np.log1p, validate=False)),
-    ('scale', StandardScaler())
-])
-
+if not transformers:
+    raise ValueError("We cooked! No usable features")
 # build the pipeline for skewed features bro
-pre = ColumnTransformer([
-    ('skewed', skewed_pipe, skewed_features),
-    ('normal', StandardScaler(), normal_features)
-], remainder='drop')
+pre = ColumnTransformer(transformers, remainder='drop')
 # FINALLY TRAIN RIDGE
 ridge_reg = Ridge(alpha=0.1, solver='cholesky')
 ridge_pipe = Pipeline([
@@ -207,7 +215,7 @@ ridge_search = RandomizedSearchCV(
     ridge_pipe, param_distributions={'ridge__alpha': loguniform(1e-3, 1e3)},
     n_iter=25, cv=splitter,
     scoring='neg_root_mean_squared_error',
-    n_jobs=1,
+    n_jobs=-1,
     random_state=42,
     verbose=1
 )
